@@ -77,3 +77,17 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+export async function me(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await User.findById(res.locals.userId);
+
+    if (!user) {
+      return res.status(401).json({ message: "user not found" });
+    }
+
+    res.json({ id: user.id, name: user.name, email: user.email });
+  } catch (err) {
+    next(err);
+  }
+}
