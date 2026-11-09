@@ -42,7 +42,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     const user = await User.create({ name, email, passwordHash });
 
     // 5. send back only safe fields
-    res.status(201).json({ id: user.id, name: user.name, email: user.email });
+    res.status(201).json({ id: user.id, name: user.name, email: user.email , role: user.role});
   } catch (err) {
     next(err);
   }
@@ -71,7 +71,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     res.json({
       accessToken,
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email , role: user.role},
     });
   } catch (err) {
     next(err);
@@ -86,7 +86,7 @@ export async function me(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ message: "user not found" });
     }
 
-    res.json({ id: user.id, name: user.name, email: user.email });
+    res.json({ id: user.id, name: user.name, email: user.email , role: user.role});
   } catch (err) {
     next(err);
   }

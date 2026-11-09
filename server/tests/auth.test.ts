@@ -55,6 +55,16 @@ describe("register", () => {
 
     expect(res.status).toBe(400);
   });
+
+    it("ignores a role sent in the body", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ ...testUser, role: "admin" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.role).toBe("intern");
+  });
+  
 });
 
 describe("login", () => {
