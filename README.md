@@ -198,7 +198,7 @@ This is how I checked that the protected route really works from the browser.
 
 ## Pull requests
 
-- Week 1: [Week 1: Set up the project and log in](PASTE-YOUR-PR-LINK-HERE)
+- Week 1: [Week 1: Set up the project and log in]https://github.com/Zaib058/zalvantic-ops-portal-zaib-fatima/pull/1
 
 ---
 
