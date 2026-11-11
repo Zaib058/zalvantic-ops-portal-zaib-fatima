@@ -6,16 +6,16 @@ I'm building it one week at a time, so right now only the first part exists: the
 
 ## Where the project is
 
-| Week | What gets built | Finish by | Status |
-| ---- | --------------- | --------- | ------ |
-| 1 | Set up the project and log in | 08/11/2026 | Done |
-| 2 | Roles and the first real data | 15/11/2026 | Not started |
-| 3 | Cohorts, domains and CSV import | 22/11/2026 | Not started |
-| 4 | Weekly tasks and submissions | 29/11/2026 | Not started |
-| 5 | Reviews and feedback | 06/12/2026 | Not started |
-| 6 | Certificates and verification | 13/12/2026 | Not started |
-| 7 | Automation, emails and security | 20/12/2026 | Not started |
-| 8 | Tests, Docker and deployment | 27/12/2026 | Not started |
+| Week | What gets built                 | Finish by  | Status      |
+| ---- | ------------------------------- | ---------- | ----------- |
+| 1    | Set up the project and log in   | 08/11/2026 | Done        |
+| 2    | Roles and the first real data   | 15/11/2026 | Not started |
+| 3    | Cohorts, domains and CSV import | 22/11/2026 | Not started |
+| 4    | Weekly tasks and submissions    | 29/11/2026 | Not started |
+| 5    | Reviews and feedback            | 06/12/2026 | Not started |
+| 6    | Certificates and verification   | 13/12/2026 | Not started |
+| 7    | Automation, emails and security | 20/12/2026 | Not started |
+| 8    | Tests, Docker and deployment    | 27/12/2026 | Not started |
 
 ## What's in week 1
 
@@ -55,12 +55,14 @@ docs/              diagrams and screenshots
 You need Node 20 or newer and a MongoDB database. I used a free Atlas cluster.
 
 1. Clone the repo and open it:
+
    ```bash
    git clone https://github.com/Zaib058/zalvantic-ops-portal-zaib-fatima.git
    cd zalvantic-ops-portal-zaib-fatima
    ```
 
 2. Make your own `.env` file in the root folder (next to `.env.example`) and fill it in:
+
    ```
    PORT=5000
    MONGO_URI=your atlas connection string, ending in /ops-portal
@@ -68,26 +70,33 @@ You need Node 20 or newer and a MongoDB database. I used a free Atlas cluster.
    MONGO_URI_TEST=same string but ending in /ops-portal-test
    CLIENT_URL=http://localhost:5173
    ```
+
    You can make a secret with:
+
    ```bash
    node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
    ```
+
    The `.env` file is ignored by Git, so it never gets pushed.
 
 3. Start the backend:
+
    ```bash
    cd server
    npm install
    npm run dev
    ```
+
    It should print `mongodb connected` and `server running on port 5000`.
 
 4. In a second terminal, start the frontend:
+
    ```bash
    cd client
    npm install
    npm run dev
    ```
+
    Then open http://localhost:5173.
 
 5. There is no register page yet, so make a user first with Postman or Thunder Client. Send a `POST` to `http://localhost:5000/api/auth/register` with this JSON body:
@@ -113,12 +122,12 @@ The tests use the second database from `MONGO_URI_TEST`. It has to be a differen
 
 ## API
 
-| Method | Route | Needs a token | What it does |
-| ------ | ----- | ------------- | ------------ |
-| GET | `/api/health` | no | checks that the server is running |
-| POST | `/api/auth/register` | no | creates a user (name, email, password) |
-| POST | `/api/auth/login` | no | returns an access token and the user |
-| GET | `/api/auth/me` | yes | returns the logged in user |
+| Method | Route                | Needs a token | What it does                           |
+| ------ | -------------------- | ------------- | -------------------------------------- |
+| GET    | `/api/health`        | no            | checks that the server is running      |
+| POST   | `/api/auth/register` | no            | creates a user (name, email, password) |
+| POST   | `/api/auth/login`    | no            | returns an access token and the user   |
+| GET    | `/api/auth/me`       | yes           | returns the logged in user             |
 
 Protected routes expect the header `Authorization: Bearer <token>`.
 
