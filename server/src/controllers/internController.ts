@@ -39,12 +39,10 @@ export async function createIntern(
 ) {
   const result = createSchema.safeParse(req.body);
   if (!result.success) {
-    return res
-      .status(400)
-      .json({
-        message: "validation failed",
-        errors: formatIssues(result.error),
-      });
+    return res.status(400).json({
+      message: "validation failed",
+      errors: formatIssues(result.error),
+    });
   }
 
   const { userId, domain, status } = result.data;
@@ -138,17 +136,15 @@ export async function updateIntern(
 
   const result = updateSchema.safeParse(req.body);
   if (!result.success) {
-    return res
-      .status(400)
-      .json({
-        message: "validation failed",
-        errors: formatIssues(result.error),
-      });
+    return res.status(400).json({
+      message: "validation failed",
+      errors: formatIssues(result.error),
+    });
   }
 
   try {
     const intern = await Intern.findByIdAndUpdate(req.params.id, result.data, {
-      new: true,
+      returnDocument: "after",
     }).populate("user", "name email role");
     if (!intern) {
       return res.status(404).json({ message: "intern not found" });
