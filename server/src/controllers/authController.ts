@@ -15,7 +15,11 @@ const loginSchema = z.object({
   password: z.string().min(1, "password is required"),
 });
 
-export async function register(req: Request, res: Response, next: NextFunction) {
+export async function register(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   // 1. check the body
   const result = registerSchema.safeParse(req.body);
   if (!result.success) {
@@ -42,7 +46,12 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     const user = await User.create({ name, email, passwordHash });
 
     // 5. send back only safe fields
-    res.status(201).json({ id: user.id, name: user.name, email: user.email , role: user.role});
+    res.status(201).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
   } catch (err) {
     next(err);
   }
@@ -60,7 +69,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     // if there is no user we skip compare, user would be null
-    const passwordOk = user ? await bcrypt.compare(password, user.passwordHash) : false;
+    const passwordOk = user
+      ? await bcrypt.compare(password, user.passwordHash)
+      : false;
 
     // same message for wrong email and wrong password
     if (!user || !passwordOk) {
@@ -71,7 +82,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     res.json({
       accessToken,
-      user: { id: user.id, name: user.name, email: user.email , role: user.role},
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (err) {
     next(err);
@@ -86,7 +102,12 @@ export async function me(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ message: "user not found" });
     }
 
-    res.json({ id: user.id, name: user.name, email: user.email , role: user.role});
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
   } catch (err) {
     next(err);
   }

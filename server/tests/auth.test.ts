@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import app from "../src/app";
 import { User } from "../src/models/User";
 
-
 const testUser = {
   name: "Test User",
   email: "test@example.com",
@@ -56,7 +55,7 @@ describe("register", () => {
     expect(res.status).toBe(400);
   });
 
-    it("ignores a role sent in the body", async () => {
+  it("ignores a role sent in the body", async () => {
     const res = await request(app)
       .post("/api/auth/register")
       .send({ ...testUser, role: "admin" });
@@ -64,7 +63,6 @@ describe("register", () => {
     expect(res.status).toBe(201);
     expect(res.body.role).toBe("intern");
   });
-  
 });
 
 describe("login", () => {
@@ -122,9 +120,13 @@ describe("protected route /api/auth/me", () => {
   });
 
   it("rejects an expired token", async () => {
-    const oldToken = jwt.sign({ sub: "123" }, process.env.JWT_SECRET as string, {
-      expiresIn: -10,
-    });
+    const oldToken = jwt.sign(
+      { sub: "123" },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: -10,
+      },
+    );
     const res = await request(app)
       .get("/api/auth/me")
       .set("Authorization", `Bearer ${oldToken}`);
