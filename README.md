@@ -269,7 +269,7 @@ An intern record only stores the id of the user plus a domain and a status. The 
 ## Pull requests
 
 - Week 1: [Week 1: Set up the project and log in](https://github.com/Zaib058/zalvantic-ops-portal-zaib-fatima/pull/1)
-- Week 2: [Week 2: Add roles and the first real data](PASTE-WEEK-2-PR-LINK-HERE)
+- Week 2: [Week 2: Add roles and the first real data](https://github.com/Zaib058/zalvantic-ops-portal-zaib-fatima/pull/2)
 
 ---
 
