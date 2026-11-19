@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 import app from "../src/app";
 import { User } from "../src/models/User";
 import { Intern } from "../src/models/Intern";
-import { createUserAndLogin } from "./helpers";
+import { Cohort } from "../src/models/Cohort";
+import { createUserAndLogin, createCohort } from "./helpers";
 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI_TEST as string);
@@ -11,6 +12,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await Intern.deleteMany({});
+  await Cohort.deleteMany({});
   await User.deleteMany({});
 });
 
@@ -18,7 +20,7 @@ afterAll(async () => {
   await mongoose.disconnect();
 });
 
-// makes an admin and a normal user, then an intern record for the normal user
+// makes an admin, a normal user and a cohort, then an intern record for the normal user
 async function setup() {
   const admin = await createUserAndLogin("admin@example.com", "admin");
   const person = await createUserAndLogin(
@@ -26,12 +28,13 @@ async function setup() {
     "intern",
     "Sara Khan",
   );
+  const cohortId = await createCohort();
   const res = await request(app)
     .post("/api/interns")
     .set("Authorization", `Bearer ${admin.token}`)
-    .send({ userId: person.id, domain: "MERN / MEAN Stack" });
+    .send({ userId: person.id, cohortId, domain: "MERN / MEAN Stack" });
 
-  return { admin, person, internId: res.body._id as string };
+  return { admin, person, cohortId, internId: res.body._id as string };
 }
 
 describe("admin routes are blocked for everyone else", () => {
@@ -77,40 +80,58 @@ describe("admin routes are blocked for everyone else", () => {
 });
 
 describe("create intern", () => {
-  it("creates an intern and shows the user details without the hash", async () => {
+  it("creates an intern and shows the user and cohort without the hash", async () => {
     const admin = await createUserAndLogin("admin@example.com", "admin");
     const person = await createUserAndLogin(
       "sara@example.com",
       "intern",
       "Sara Khan",
     );
+    const cohortId = await createCohort();
 
     const res = await request(app)
       .post("/api/interns")
       .set("Authorization", `Bearer ${admin.token}`)
-      .send({ userId: person.id, domain: "MERN / MEAN Stack" });
+      .send({ userId: person.id, cohortId, domain: "MERN / MEAN Stack" });
 
     expect(res.status).toBe(201);
     expect(res.body.user.name).toBe("Sara Khan");
     expect(res.body.user.passwordHash).toBeUndefined();
+    expect(res.body.cohort.name).toBe("Batch 2026-27");
   });
 
   it("gives 409 when the user is already an intern", async () => {
-    const { admin, person } = await setup();
+    const { admin, person, cohortId } = await setup();
     const res = await request(app)
       .post("/api/interns")
       .set("Authorization", `Bearer ${admin.token}`)
-      .send({ userId: person.id, domain: "MERN / MEAN Stack" });
+      .send({ userId: person.id, cohortId, domain: "MERN / MEAN Stack" });
     expect(res.status).toBe(409);
   });
 
   it("gives 404 when the user does not exist", async () => {
     const admin = await createUserAndLogin("admin@example.com", "admin");
+    const cohortId = await createCohort();
     const res = await request(app)
       .post("/api/interns")
       .set("Authorization", `Bearer ${admin.token}`)
       .send({
         userId: new mongoose.Types.ObjectId().toString(),
+        cohortId,
+        domain: "MERN / MEAN Stack",
+      });
+    expect(res.status).toBe(404);
+  });
+
+  it("gives 404 when the cohort does not exist", async () => {
+    const admin = await createUserAndLogin("admin@example.com", "admin");
+    const person = await createUserAndLogin("sara@example.com", "intern");
+    const res = await request(app)
+      .post("/api/interns")
+      .set("Authorization", `Bearer ${admin.token}`)
+      .send({
+        userId: person.id,
+        cohortId: new mongoose.Types.ObjectId().toString(),
         domain: "MERN / MEAN Stack",
       });
     expect(res.status).toBe(404);
@@ -118,20 +139,33 @@ describe("create intern", () => {
 
   it("gives 400 for an invalid user id", async () => {
     const admin = await createUserAndLogin("admin@example.com", "admin");
+    const cohortId = await createCohort();
     const res = await request(app)
       .post("/api/interns")
       .set("Authorization", `Bearer ${admin.token}`)
-      .send({ userId: "not-an-id", domain: "MERN / MEAN Stack" });
+      .send({ userId: "not-an-id", cohortId, domain: "MERN / MEAN Stack" });
     expect(res.status).toBe(400);
   });
 
   it("gives 400 when the domain is too short", async () => {
     const admin = await createUserAndLogin("admin@example.com", "admin");
     const person = await createUserAndLogin("sara@example.com", "intern");
+    const cohortId = await createCohort();
     const res = await request(app)
       .post("/api/interns")
       .set("Authorization", `Bearer ${admin.token}`)
-      .send({ userId: person.id, domain: "x" });
+      .send({ userId: person.id, cohortId, domain: "x" });
+    expect(res.status).toBe(400);
+  });
+
+  it("gives 400 when the domain is not in the cohort", async () => {
+    const admin = await createUserAndLogin("admin@example.com", "admin");
+    const person = await createUserAndLogin("sara@example.com", "intern");
+    const cohortId = await createCohort();
+    const res = await request(app)
+      .post("/api/interns")
+      .set("Authorization", `Bearer ${admin.token}`)
+      .send({ userId: person.id, cohortId, domain: "Data Science" });
     expect(res.status).toBe(400);
   });
 });
@@ -215,6 +249,25 @@ describe("update and delete", () => {
       .patch(`/api/interns/${internId}`)
       .set("Authorization", `Bearer ${admin.token}`)
       .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it("changes the domain to another one in the cohort", async () => {
+    const { admin, internId } = await setup();
+    const res = await request(app)
+      .patch(`/api/interns/${internId}`)
+      .set("Authorization", `Bearer ${admin.token}`)
+      .send({ domain: "UI / UX Design" });
+    expect(res.status).toBe(200);
+    expect(res.body.domain).toBe("UI / UX Design");
+  });
+
+  it("gives 400 when the new domain is not in the cohort", async () => {
+    const { admin, internId } = await setup();
+    const res = await request(app)
+      .patch(`/api/interns/${internId}`)
+      .set("Authorization", `Bearer ${admin.token}`)
+      .send({ domain: "Data Science" });
     expect(res.status).toBe(400);
   });
 

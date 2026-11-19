@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { isValidObjectId } from "mongoose";
 import { z } from "zod";
 import { Cohort } from "../models/Cohort";
+import { Intern } from "../models/Intern";
 
 const domains = z
   .array(z.string().trim().min(2, "domain is too short"))
@@ -117,6 +118,25 @@ export async function updateCohort(
       }
     }
 
+    // a domain that interns are using can't be removed
+    const newDomains = result.data.domains;
+    if (newDomains) {
+      const current = await Cohort.findById(req.params.id);
+      const removed = current
+        ? current.domains.filter((d) => !newDomains.includes(d))
+        : [];
+      if (removed.length > 0) {
+        const inUse = await Intern.exists({
+          cohort: req.params.id,
+          domain: { $in: removed },
+        });
+        if (inUse) {
+          return res
+            .status(409)
+            .json({ message: "some interns still use a domain you removed" });
+        }
+      }
+    }
     const cohort = await Cohort.findByIdAndUpdate(req.params.id, result.data, {
       returnDocument: "after",
     });
@@ -139,6 +159,10 @@ export async function deleteCohort(
   }
 
   try {
+    const hasInterns = await Intern.exists({ cohort: req.params.id });
+    if (hasInterns) {
+      return res.status(409).json({ message: "this cohort still has interns" });
+    }
     const cohort = await Cohort.findByIdAndDelete(req.params.id);
     if (!cohort) {
       return res.status(404).json({ message: "cohort not found" });

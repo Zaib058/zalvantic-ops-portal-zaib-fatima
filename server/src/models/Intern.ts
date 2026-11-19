@@ -14,6 +14,7 @@ const internSchema = new Schema(
     },
     domain: { type: String, required: true, trim: true },
     status: { type: String, enum: INTERN_STATUSES, default: "active" },
+    cohort: { type: Schema.Types.ObjectId, ref: "Cohort", required: true },
   },
   { timestamps: true },
 );

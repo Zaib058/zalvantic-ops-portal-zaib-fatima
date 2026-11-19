@@ -3,9 +3,13 @@ import { isValidObjectId } from "mongoose";
 import { z } from "zod";
 import { Intern, INTERN_STATUSES } from "../models/Intern";
 import { User } from "../models/User";
+import { Cohort } from "../models/Cohort";
+
+const objectId = z.string().refine((v) => isValidObjectId(v), "invalid id");
 
 const createSchema = z.object({
-  userId: z.string().refine((v) => isValidObjectId(v), "invalid user id"),
+  userId: objectId,
+  cohortId: objectId,
   domain: z.string().trim().min(2, "domain is too short"),
   status: z.enum(INTERN_STATUSES).optional(),
 });
@@ -20,12 +24,11 @@ const updateSchema = z
     "send at least one field to update",
   );
 
-function formatIssues(error: z.ZodError) {
-  return error.issues.map((i) => ({
-    field: i.path.join("."),
-    message: i.message,
-  }));
-}
+// which fields to fill in when we send an intern back
+const populateFields = [
+  { path: "user", select: "name email role" },
+  { path: "cohort", select: "name" },
+];
 
 // so people can't break the search with characters like ( or *
 function escapeRegex(text: string) {
@@ -39,18 +42,28 @@ export async function createIntern(
 ) {
   const result = createSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({
-      message: "validation failed",
-      errors: formatIssues(result.error),
-    });
+    return res
+      .status(400)
+      .json({ message: "validation failed", errors: result.error.issues });
   }
 
-  const { userId, domain, status } = result.data;
+  const { userId, cohortId, domain, status } = result.data;
 
   try {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "user not found" });
+    }
+
+    const cohort = await Cohort.findById(cohortId);
+    if (!cohort) {
+      return res.status(404).json({ message: "cohort not found" });
+    }
+
+    if (!cohort.domains.includes(domain)) {
+      return res
+        .status(400)
+        .json({ message: "this domain is not in the cohort" });
     }
 
     const exists = await Intern.findOne({ user: userId });
@@ -60,8 +73,13 @@ export async function createIntern(
         .json({ message: "this user is already an intern" });
     }
 
-    const intern = await Intern.create({ user: userId, domain, status });
-    await intern.populate("user", "name email role");
+    const intern = await Intern.create({
+      user: userId,
+      cohort: cohortId,
+      domain,
+      status,
+    });
+    await intern.populate(populateFields);
 
     res.status(201).json(intern);
   } catch (err) {
@@ -92,7 +110,7 @@ export async function listInterns(
     }
 
     const interns = await Intern.find(filter)
-      .populate("user", "name email role")
+      .populate(populateFields)
       .sort({ createdAt: -1 });
 
     res.json(interns);
@@ -112,8 +130,7 @@ export async function getIntern(
 
   try {
     const intern = await Intern.findById(req.params.id).populate(
-      "user",
-      "name email role",
+      populateFields,
     );
     if (!intern) {
       return res.status(404).json({ message: "intern not found" });
@@ -136,19 +153,30 @@ export async function updateIntern(
 
   const result = updateSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({
-      message: "validation failed",
-      errors: formatIssues(result.error),
-    });
+    return res
+      .status(400)
+      .json({ message: "validation failed", errors: result.error.issues });
   }
 
   try {
-    const intern = await Intern.findByIdAndUpdate(req.params.id, result.data, {
-      returnDocument: "after",
-    }).populate("user", "name email role");
+    const intern = await Intern.findById(req.params.id);
     if (!intern) {
       return res.status(404).json({ message: "intern not found" });
     }
+
+    // a new domain has to be one of the domains of the intern's cohort
+    if (result.data.domain) {
+      const cohort = await Cohort.findById(intern.cohort);
+      if (!cohort || !cohort.domains.includes(result.data.domain)) {
+        return res
+          .status(400)
+          .json({ message: "this domain is not in the cohort" });
+      }
+    }
+
+    intern.set(result.data);
+    await intern.save();
+    await intern.populate(populateFields);
 
     res.json(intern);
   } catch (err) {
