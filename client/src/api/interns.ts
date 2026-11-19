@@ -25,5 +25,6 @@ export async function getInterns(search: string): Promise<Intern[]> {
   if (!res.ok) {
     throw new Error("Could not load interns");
   }
-  return res.json();
+  const body = await res.json();
+  return body.data;
 }

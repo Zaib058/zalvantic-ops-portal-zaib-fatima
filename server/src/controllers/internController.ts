@@ -92,10 +92,27 @@ export async function listInterns(
   res: Response,
   next: NextFunction,
 ) {
+  // read the query string, an empty value means "no filter"
+  const search =
+    typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const cohort = typeof req.query.cohort === "string" ? req.query.cohort : "";
+  const domain = typeof req.query.domain === "string" ? req.query.domain : "";
+  const status = typeof req.query.status === "string" ? req.query.status : "";
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
+
+  if (cohort && !isValidObjectId(cohort)) {
+    return res.status(400).json({ message: "invalid cohort id" });
+  }
+  if (status && !(INTERN_STATUSES as readonly string[]).includes(status)) {
+    return res.status(400).json({ message: "invalid status" });
+  }
+
   try {
-    const search =
-      typeof req.query.search === "string" ? req.query.search.trim() : "";
-    let filter = {};
+    const filter: Record<string, unknown> = {};
+    if (cohort) filter.cohort = cohort;
+    if (domain) filter.domain = domain;
+    if (status) filter.status = status;
 
     if (search) {
       const regex = new RegExp(escapeRegex(search), "i");
@@ -106,14 +123,23 @@ export async function listInterns(
       }).select("_id");
       const userIds = users.map((u) => u._id);
 
-      filter = { $or: [{ user: { $in: userIds } }, { domain: regex }] };
+      filter.$or = [{ user: { $in: userIds } }, { domain: regex }];
     }
 
+    const total = await Intern.countDocuments(filter);
     const interns = await Intern.find(filter)
       .populate(populateFields)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    res.json(interns);
+    res.json({
+      data: interns,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (err) {
     next(err);
   }
