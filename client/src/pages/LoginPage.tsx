@@ -23,7 +23,7 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="card auth" onSubmit={handleSubmit}>
       <h1>Log in</h1>
 
       <label>
@@ -46,7 +46,7 @@ export default function LoginPage() {
         />
       </label>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error">{error}</p>}
 
       <button type="submit">Log in</button>
     </form>
