@@ -239,3 +239,57 @@ th {
     flex-wrap: wrap;
   }
 }
+/* tasks and submissions */
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--text);
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.chip.open {
+  color: var(--green-dark);
+  background: #e3f1ec;
+}
+
+.chip.late {
+  color: #8a5a00;
+  background: #fdf0d5;
+}
+
+.chip.closed {
+  color: var(--muted);
+  background: #eceeed;
+}
+
+.warning {
+  color: #8a5a00;
+}
+
+.sub {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 700px) {
+  .two {
+    grid-template-columns: 1fr;
+  }
+}

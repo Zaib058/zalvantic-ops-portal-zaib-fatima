@@ -21,7 +21,12 @@ export async function request<T>(
     throw new Error("not logged in");
   }
   if (res.status === 403) {
-    throw new Error("Only admins can see this page");
+    const data = await res.json().catch(() => ({}));
+    // a wrong role keeps the old text, other 403 messages (like "not released yet") come from the server
+    if (data.message === "you do not have permission") {
+      throw new Error("Only admins can see this page");
+    }
+    throw new Error(data.message || "You are not allowed to do this");
   }
   if (res.status === 204) {
     return undefined as T;

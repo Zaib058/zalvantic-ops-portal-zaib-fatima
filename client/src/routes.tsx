@@ -6,6 +6,8 @@ import ImportPage from "./pages/ImportPage";
 import CohortsPage from "./pages/CohortsPage";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import TasksPage from "./pages/TasksPage";
+import MyTasksPage from "./pages/MyTasksPage";
 
 export default function AppRoutes() {
   return (
@@ -22,6 +24,8 @@ export default function AppRoutes() {
         <Route path="/interns" element={<InternsPage />} />
         <Route path="/interns/import" element={<ImportPage />} />
         <Route path="/cohorts" element={<CohortsPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/my-tasks" element={<MyTasksPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -32,8 +32,10 @@ export default function Layout() {
           <>
             <NavLink to="/interns">Interns</NavLink>
             <NavLink to="/cohorts">Cohorts</NavLink>
+            <NavLink to="/tasks">Tasks</NavLink>
           </>
         )}
+        {user?.role === "intern" && <NavLink to="/my-tasks">My tasks</NavLink>}
         <button className="link" onClick={handleLogout}>
           Log out
         </button>
